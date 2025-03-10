@@ -9,9 +9,26 @@
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        button {
+            font-size: 24px;
+            padding: 10px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
+    <div id="controls">
+        <button onclick="moveLeft()">⬅️</button>
+        <button onclick="jump()">⬆️</button>
+        <button onclick="moveRight()">➡️</button>
+    </div>
+
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand(); // توسيع التطبيق ليملأ الشاشة
@@ -27,12 +44,13 @@
             scene: { preload, create, update }
         };
 
-        let player, coins, score = 0, scoreText;
+        let player, coins, enemies, score = 0, scoreText, level = 1;
 
         function preload() {
             this.load.image('background', 'https://i.imgur.com/J3R59Ym.jpg'); // خلفية
             this.load.image('platform', 'https://i.imgur.com/7QF1Z0K.png'); // الأرضية
             this.load.image('coin', 'https://i.imgur.com/K0Cl6a6.png'); // عملة
+            this.load.image('enemy', 'https://i.imgur.com/J8XX6qF.png'); // عدو
             this.load.spritesheet('mario', 'https://i.imgur.com/VuDMIyU.png', { frameWidth: 32, frameHeight: 32 }); // شخصية ماريو
         }
 
@@ -65,6 +83,13 @@
                 coin.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
             });
 
+            enemies = this.physics.add.group();
+            let enemy1 = enemies.create(500, 350, 'enemy').setScale(1.5);
+            enemy1.setVelocityX(100);
+            enemy1.setCollideWorldBounds(true);
+            enemy1.setBounce(1);
+            this.physics.add.collider(player, enemies, hitEnemy, null, this);
+            
             this.physics.add.collider(coins, platforms);
             this.physics.add.overlap(player, coins, collectCoin, null, this);
 
@@ -97,7 +122,12 @@
             });
         }
 
-        function update() {}
+        function update() {
+            // Check if player reached the next level
+            if (score >= 50 && level === 1) {
+                levelUp();
+            }
+        }
 
         function collectCoin(player, coin) {
             coin.disableBody(true, true);
@@ -106,7 +136,40 @@
             tg.MainButton.setText(`🚀 نقاطك: ${score}`).show();
         }
 
+        function hitEnemy(player, enemy) {
+            score -= 20;
+            scoreText.setText('النقاط: ' + score);
+            if (score < 0) {
+                alert("لقد خسرت! 😢");
+                location.reload();
+            }
+        }
+
+        function levelUp() {
+            level++;
+            alert(`🎉 مستوى جديد: ${level}`);
+            let newEnemy = enemies.create(700, 350, 'enemy').setScale(1.5).setVelocityX(-150);
+            newEnemy.setCollideWorldBounds(true);
+            newEnemy.setBounce(1);
+        }
+
+        // Screen control buttons
+        function moveLeft() {
+            player.setVelocityX(-160);
+            player.anims.play('run', true);
+        }
+
+        function moveRight() {
+            player.setVelocityX(160);
+            player.anims.play('run', true);
+        }
+
+        function jump() {
+            if (player.body.touching.down) {
+                player.setVelocityY(-400);
+            }
+        }
+
     </script>
 </body>
 </html>
-
