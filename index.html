@@ -3,173 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة ماريو المصغرة</title>
+    <title>تطبيق رمضان</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f9;
         }
-        button {
-            font-size: 24px;
+        .header {
+            background-color: #ffcc00;
             padding: 10px;
-            margin: 5px;
+            border-radius: 10px;
+        }
+        .button {
+            background-color: #0088cc;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .countdown {
+            font-size: 24px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="controls">
-        <button onclick="moveLeft()">⬅️</button>
-        <button onclick="jump()">⬆️</button>
-        <button onclick="moveRight()">➡️</button>
+    <div class="header">
+        <h1>أهلاً وسهلاً في تطبيق رمضان!</h1>
+        <p>نتمنى لكم رمضان مبارك</p>
     </div>
 
+    <div class="countdown" id="countdown">
+        <p>وقت الإفطار قريب!</p>
+    </div>
+
+    <button class="button" id="prayTimeBtn">مواقيت الصلاة</button>
+    <button class="button" id="duaBtn">دعاء اليوم</button>
+
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand(); // توسيع التطبيق ليملأ الشاشة
+        // تأكد من أن التطبيق المصغر تم تحميله بشكل صحيح
+        Telegram.WebApp.init();
 
-        const config = {
-            type: Phaser.AUTO,
-            width: 800,
-            height: 400,
-            physics: {
-                default: 'arcade',
-                arcade: { gravity: { y: 500 }, debug: false }
-            },
-            scene: { preload, create, update }
-        };
+        // تعيين مؤقت للإفطار (مثال وقت الإفطار الساعة 6:30 مساءً)
+        const iftarTime = new Date();
+        iftarTime.setHours(18, 30, 0);  // الساعة 6:30 مساءً
+        const countdownElement = document.getElementById('countdown');
 
-        let player, coins, enemies, score = 0, scoreText, level = 1;
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = iftarTime - now;
 
-        function preload() {
-            this.load.image('background', 'https://i.imgur.com/J3R59Ym.jpg'); // خلفية
-            this.load.image('platform', 'https://i.imgur.com/7QF1Z0K.png'); // الأرضية
-            this.load.image('coin', 'https://i.imgur.com/K0Cl6a6.png'); // عملة
-            this.load.image('enemy', 'https://i.imgur.com/J8XX6qF.png'); // عدو
-            this.load.spritesheet('mario', 'https://i.imgur.com/VuDMIyU.png', { frameWidth: 32, frameHeight: 32 }); // شخصية ماريو
-        }
-
-        function create() {
-            this.add.image(400, 200, 'background').setScale(2); // تعيين الخلفية
-
-            let platforms = this.physics.add.staticGroup();
-            platforms.create(400, 390, 'platform').setScale(2).refreshBody();
-
-            player = this.physics.add.sprite(100, 300, 'mario').setScale(1.5);
-            player.setBounce(0.2);
-            player.setCollideWorldBounds(true);
-            this.physics.add.collider(player, platforms);
-
-            this.anims.create({
-                key: 'run',
-                frames: this.anims.generateFrameNumbers('mario', { start: 1, end: 2 }),
-                frameRate: 10,
-                repeat: -1
-            });
-
-            this.anims.create({
-                key: 'idle',
-                frames: [{ key: 'mario', frame: 0 }],
-                frameRate: 10
-            });
-
-            coins = this.physics.add.group({ key: 'coin', repeat: 5, setXY: { x: 150, y: 0, stepX: 120 } });
-            coins.children.iterate(coin => {
-                coin.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-            });
-
-            enemies = this.physics.add.group();
-            let enemy1 = enemies.create(500, 350, 'enemy').setScale(1.5);
-            enemy1.setVelocityX(100);
-            enemy1.setCollideWorldBounds(true);
-            enemy1.setBounce(1);
-            this.physics.add.collider(player, enemies, hitEnemy, null, this);
-            
-            this.physics.add.collider(coins, platforms);
-            this.physics.add.overlap(player, coins, collectCoin, null, this);
-
-            scoreText = this.add.text(16, 16, 'النقاط: 0', { fontSize: '20px', fill: '#FFF' });
-
-            this.input.keyboard.on('keydown-LEFT', () => {
-                player.setVelocityX(-160);
-                player.anims.play('run', true);
-            });
-
-            this.input.keyboard.on('keydown-RIGHT', () => {
-                player.setVelocityX(160);
-                player.anims.play('run', true);
-            });
-
-            this.input.keyboard.on('keyup-LEFT', () => {
-                player.setVelocityX(0);
-                player.anims.play('idle');
-            });
-
-            this.input.keyboard.on('keyup-RIGHT', () => {
-                player.setVelocityX(0);
-                player.anims.play('idle');
-            });
-
-            this.input.keyboard.on('keydown-UP', () => {
-                if (player.body.touching.down) {
-                    player.setVelocityY(-400);
-                }
-            });
-        }
-
-        function update() {
-            // Check if player reached the next level
-            if (score >= 50 && level === 1) {
-                levelUp();
+            if (timeLeft > 0) {
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                countdownElement.innerHTML = `متبقي للإفطار: ${hours} ساعة و ${minutes} دقيقة`;
+            } else {
+                countdownElement.innerHTML = 'وقت الإفطار!';
             }
         }
 
-        function collectCoin(player, coin) {
-            coin.disableBody(true, true);
-            score += 10;
-            scoreText.setText('النقاط: ' + score);
-            tg.MainButton.setText(`🚀 نقاطك: ${score}`).show();
-        }
+        setInterval(updateCountdown, 60000);  // تحديث العداد كل دقيقة
 
-        function hitEnemy(player, enemy) {
-            score -= 20;
-            scoreText.setText('النقاط: ' + score);
-            if (score < 0) {
-                alert("لقد خسرت! 😢");
-                location.reload();
-            }
-        }
+        // إظهار دعاء اليوم
+        document.getElementById('duaBtn').addEventListener('click', function() {
+            alert("اللهم بلغنا رمضان، واجعلنا من أهل القرآن.");
+        });
 
-        function levelUp() {
-            level++;
-            alert(`🎉 مستوى جديد: ${level}`);
-            let newEnemy = enemies.create(700, 350, 'enemy').setScale(1.5).setVelocityX(-150);
-            newEnemy.setCollideWorldBounds(true);
-            newEnemy.setBounce(1);
-        }
-
-        // Screen control buttons
-        function moveLeft() {
-            player.setVelocityX(-160);
-            player.anims.play('run', true);
-        }
-
-        function moveRight() {
-            player.setVelocityX(160);
-            player.anims.play('run', true);
-        }
-
-        function jump() {
-            if (player.body.touching.down) {
-                player.setVelocityY(-400);
-            }
-        }
-
+        // إظهار مواقيت الصلاة (مثال بسيط)
+        document.getElementById('prayTimeBtn').addEventListener('click', function() {
+            alert("مواقيت الصلاة لهذا اليوم: \nالفجر: 5:00 ص\nالظهر: 12:30 م\nالعصر: 3:45 م\nالمغرب: 6:30 م");
+        });
     </script>
 </body>
 </html>
