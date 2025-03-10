@@ -84,9 +84,9 @@
 
         // إظهار مواقيت الصلاة باستخدام Aladhan API
         document.getElementById('prayTimeBtn').addEventListener('click', function() {
-            // الموقع الجغرافي للمستخدم أو منطقة ثابتة (مثل مدينة)
-            const latitude = 24.7136; // عرض مدينة الرياض (مثال)
-            const longitude = 46.6753; // طول مدينة الرياض (مثال)
+            // الإحداثيات الجغرافية للعراق
+            const latitude = 33.3152; // عرض بغداد، العراق
+            const longitude = 44.3661; // طول بغداد، العراق
             const method = 2; // طريقة حساب مواقيت الصلاة (طريقة مصرية كمثال)
             
             fetch(`http://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=${method}`)
