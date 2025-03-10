@@ -1,0 +1,15 @@
+function moveLeft() {
+    player.setVelocityX(-160);
+    player.anims.play('run', true);
+}
+
+function moveRight() {
+    player.setVelocityX(160);
+    player.anims.play('run', true);
+}
+
+function jump() {
+    if (player.body.touching.down) {
+        player.setVelocityY(-400);
+    }
+}
